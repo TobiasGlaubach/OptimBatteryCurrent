@@ -245,51 +245,62 @@ beta_1 = rand() * (sigma_1 + eps);
 beta_2 = rand() * (sigma_2 + eps);
 
 %% MIAD
-
+run = 1;
 while run == 1
     
-	% I_Mn is constant for us
+    % I_Mn is constant for us
     
-    x, fval, exitflag, output = fmincon(fun,x0, ...
-                                    A,b, ...
-                                    Aeq,beq, ...
-                                    lb,ub, ...
-                                    nonlcon, ...
-                                    options);
+    [x, fval, exitflag, output] = ...
+        fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon,options);
 
     is_feasible = exitflag == -2;
-
-    if is_feasible == 1
-        if sigma_1 >= beta_1 && sigma_2 >= beta_2
-            if n == 1
-                temp_p1 = sigma_1;
-                sigma_1 = sigma_1 - beta_1;
-                n = 2;
-            else
-                temp_p2 = sigma_2;
-                sigma_2 = sigma_2 - beta_2;
-                n = 1;
-            end
-            % I_Mn is constant for us
-        end
+    if(is_feasible)
+        disp('Solution is OK (feasible)')
     else
-        if temp_p1 - sigma_1 == beta_1
-            sigma_1 = sigma_1 + beta_1;
-        end
-        if temp_p2 - sigma_2 == beta_2
-            sigma_2 = sigma_2 + beta_2;
-        end
-        
-        if temp_p1 - sigma_1 ~= beta_1 && temp_p2 - sigma_2 ~= beta_2
-            if m == 1
-                sigma_1 = alpha * sigma_1;
-                m = 2;
-            else
-                sigma_2 = alpha * sigma_2;
-                m = 1;
-            end
-        end
+        disp('Solution is NOT OK (NOT feasible)')
     end
+    
+    output
+    
+    print(output.message)
+    
+% HACK: needed to uncomment this, since: 
+%       A .) we are only simulating 1 step
+%       B .) temp_1 and temp_2 
+
+%     if is_feasible == 1
+%         if sigma_1 >= beta_1 && sigma_2 >= beta_2
+%             if n == 1
+%                 temp_1 = sigma_1;
+%                 sigma_1 = sigma_1 - beta_1;
+%                 n = 2;
+%             else
+%                 temp_2 = sigma_2;
+%                 sigma_2 = sigma_2 - beta_2;
+%                 n = 1;
+%             end
+%             % I_Mn is constant for us
+%         end
+%     else
+%         if temp_1 - sigma_1 == beta_1
+%             sigma_1 = sigma_1 + beta_1;
+%         end
+%         if temp_2 - sigma_2 == beta_2
+%             sigma_2 = sigma_2 + beta_2;
+%         end
+%         
+%         if temp_1 - sigma_1 ~= beta_1 && temp_p2 - sigma_2 ~= beta_2
+%             if m == 1
+%                 sigma_1 = alpha * sigma_1;
+%                 m = 2;
+%             else
+%                 sigma_2 = alpha * sigma_2;
+%                 m = 1;
+%             end
+%         end
+%     end
+    
+    run = 0;
 end
 
 %% get results
@@ -317,17 +328,25 @@ V_sk = reshape(V_sk,[T,K]);
 t = 1:T;
 
 figure(3);
-subplot(3,1,1);
+
+subplot(4,1,1);
+for n=1:N
+    plot(t, I_Mn(:,n));
+end
+ylabel('I_{Mn}')
+
+
+subplot(4,1,2);
 plot(t, I_b);
 ylabel('I_b')
 
-subplot(3,1,2);
+subplot(4,1,3);
 for k=1:k
     plot(t, I_sk(:,k));
 end
 ylabel('I_{sk}')
 
-subplot(3,1,3);
+subplot(4,1,4);
 for k=1:k
     plot(t, V_sk(:,k));
 end
