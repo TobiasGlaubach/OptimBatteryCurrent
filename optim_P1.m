@@ -207,6 +207,10 @@ ub = [ub_I_b; ub_I_sk_out; ub_I_sk_in; ub_V_sk];
 % no inequality constraint here, only equality constraint
 A = [];
 b = [];
+% 
+% disp('WARNING!!!! SETTING UNEQUALITY TO ZERO! FOR DEBUGGING')
+% Aeq = [];
+% beq = [];
 
 %% nonlinear constraint
 nonlcon = [];
@@ -253,20 +257,23 @@ while run == 1
     [x, fval, exitflag, output] = ...
         fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon,options);
 
+    output
+    
     is_feasible = exitflag == -2;
     if(is_feasible)
         disp('Solution is OK (feasible)')
     else
         disp('Solution is NOT OK (NOT feasible)')
+        output.message
     end
     
-    output
     
-    print(output.message)
+    
+
     
 % HACK: needed to uncomment this, since: 
 %       A .) we are only simulating 1 step
-%       B .) temp_1 and temp_2 
+%       B .) temp_1 and temp_2 are potentially undefined
 
 %     if is_feasible == 1
 %         if sigma_1 >= beta_1 && sigma_2 >= beta_2
@@ -316,11 +323,11 @@ I_sk_in = x(cnt:cnt + K*T-1);
 cnt = cnt + K*T;
 
 V_sk = x(cnt:cnt + K*T-1);
-cnt = cnt + K*T;
+% cnt = cnt + K*T;
 
 I_sk = I_sk_out - I_sk_in;
-I_sk = reshape(I_sk,[T,K]);
 
+I_sk = reshape(I_sk,[T,K]);
 I_sk_out = reshape(I_sk_out,[T,K]);
 I_sk_in = reshape(I_sk_in,[T,K]);
 V_sk = reshape(V_sk,[T,K]);
@@ -329,26 +336,32 @@ t = 1:T;
 
 figure(3);
 
-subplot(4,1,1);
-for n=1:N
-    plot(t, I_Mn(:,n));
-end
-ylabel('I_{Mn}')
-
-
-subplot(4,1,2);
+subplot(3,1,1);
 plot(t, I_b);
 ylabel('I_b')
+legend('I_b')
 
-subplot(4,1,3);
-for k=1:k
-    plot(t, I_sk(:,k));
+subplot(3,1,2);
+l = {};
+for k=1:K
+    plot(t, I_sk_in(:,k), '-');
+    l{k} = ['I_{s', num2str(k), '}'];
+    hold on;
+%     plot(t, I_sk(:,k), '--');
+%     plot(t, I_sk_out(:,k), ':');
 end
-ylabel('I_{sk}')
+ylabel('I_{s}')
+legend(l)
 
-subplot(4,1,4);
-for k=1:k
+
+subplot(3,1,3);
+l = {};
+for k=1:K
     plot(t, V_sk(:,k));
+    l{k} = ['V_{s', num2str(k), '}'];
+    hold on;
 end
-ylabel('V_{sk}')
+ylabel('V_{s}')
+legend(l)
 xlabel('t')
+
