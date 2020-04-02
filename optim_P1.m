@@ -1,4 +1,8 @@
+clear;
+close all;
+debug_lvl = 1
 
+%% generate the inpput data
 gen_test_data;
 
 % HACK! this is given nowhere in the paper besides the info 
@@ -45,18 +49,19 @@ x = x0;
 % len_I_sk_in0 = length(I_sk_in0);
 % len_V_sk0 = length(V_sk0);
 
-A1 = eye(T, len_I_b0);
-A2 = ones(T, len_I_sk_out0);
-A3 = -1*ones(T, len_I_sk_in0);
-A4 = zeros(T, len_V_sk0);
+A1 = eye(T, T);
+A2 = ones(T, T*K);
+A3 = ones(T, T*K);
+A4 = zeros(T, T*K);
 
 %        I_b,      I_sk_out, I_sk_in,  V_sk
-eq1_A = [A1,       A2,       A3,       A4];
+eq1_A = [A1,       A2,       -A3,      A4];
 eq1_b =  sum(I_Mn, 2);
 
-
-% test for debugging --> this must not fail
-eq1_A * x0 - eq1_b
+if debug_lvl > 0
+    % test for debugging --> this must not fail
+    eq1_A * x0 - eq1_b
+end
 
 %% constraint 2
 
@@ -67,23 +72,17 @@ eq1_A * x0 - eq1_b
 % Z = zeros(T+1, T);
 Z = zeros(T, T);
 
+% part 1: (A-I) * V_sk
+
 % HACK: The matrice construction in the paper seems to be wrong and will 
 % result in wrong dimensions since it will result in K*(T+1) rows, which can 
 % not be concat with the rest of the constraints. By my calculations it 
-% should be a simple unity matrix. Gonna implement those here.
-
-% part 1: (A-I) * V_sk
-% A11 = zeros(1, T);
-% A11(1) = 1;
-% A21 = eye(T);
-% A22 = zeros(T,1);
-% 
-% A = [   A11, 0;
-%         A21, A22];
-% I = eye(size(A));
-
-A = eye(size(V_sk0));
-
+% should be a simple unity matrix for each k. Gonna implement those here.
+tmp = eye(T);
+A = [];
+for t=1:K
+    A = [A, tmp];
+end
 
 % part 2: D_k_out * I_sk_out - D_k_in * I_sk_in
 
@@ -93,7 +92,7 @@ A = eye(size(V_sk0));
 % not be concat with the rest of the constraints. By my calculations they 
 % should be lower triangular matrices. Gonna implement those here.
 
-%consstruct lower triangular matrix
+%construct lower triangular matrix
 tmp = zeros(T);
 for t=1:T
     tmp(t,1:t) = 1;
@@ -111,18 +110,19 @@ end
 
 %         I_b,  I_sk_out, I_sk_in, V_sk
 eq2_A = [ Z,    -D_k_out, -D_k_in, A ];
+
 % HACK: there seems to be an error in the paper, since rhs is set to be
 % length T in the paper, but needs to be T+1 for the math to work
 eq2_b = zeros(T, 1);
 
+if debug_lvl > 0
+    % test for debugging --> this must not fail
+    D_k_out * I_sk_out0
+    D_k_in * I_sk_in0
+    A * V_sk0
 
-% test for debugging --> this must not fail
-D_k_out * I_sk_out0
-D_k_in * I_sk_in0
-A * V_sk0
-
-eq2_A * x0 - eq2_b
-
+    eq2_A * x0 - eq2_b
+end
 
 %% constraint 3
 
@@ -142,36 +142,142 @@ for k=1:K
     E = [E, E_sub];
 end
 
-% test for debugging --> this must not fail
-E * V_sk0
+if debug_lvl > 0
+    % test for debugging --> this must not fail
+    E * V_sk0
+end
 
 Z1 = zeros(1, T);
-Z2 = zeros(size(I_sk_out0));
+Z2 = zeros(1, K*T);
 
 %         I_b,  I_sk_out,   I_sk_in, V_sk
-eq3_A = [ Z1,   Z2,         Z,       E ];
+eq3_A = [ Z1,   Z2,         Z2,       E ];
 eq3_b = 0;
 
-eq3_A * x0 - eq3_b
+if debug_lvl > 0
+    eq3_A * x0 - eq3_b
+end
 
 %% combine all contraints to one
-size(eq1_A * x0)
-size(eq2_A * x0)
-size(eq3_A * x0)
+Aeq = [
+    eq1_A;
+    eq2_A;
+    eq3_A];
 
-size(eq1_A)
-size(eq2_A)
-size(eq3_A)
+beq = [
+    eq1_b;
+    eq2_b;
+    eq3_b];
+
+if debug_lvl > 0
+    % test for debugging --> this must not fail
+    Aeq * x0 - beq
+end
+
+%% set the boundaries
+
+% from mathworks documentation:
+% x(i) >= lb(i) for all i.
+% x(i) <= ub(i) for all i.
+
+% no constraint on I_b
+lb_I_b = ones(T, 1)* -inf;
+ub_I_b = ones(T, 1) * inf;
+
+% 0 <= I_sk_out
+lb_I_sk_out = zeros(T*K, 1);
+ub_I_sk_out = ones(T*K, 1) * inf;
+
+% 0 <= I_sk_in
+lb_I_sk_in = zeros(T*K, 1);
+ub_I_sk_in = ones(T*K, 1) * inf;
+
+% 0 <= V_sk <= V_sk_max | for each k
+lb_V_sk = zeros(T*K, 1);
+ub_V_sk = [];
+for k=1:K
+    ub_V_sk = [ub_V_sk; ones(T, 1) * V_sk_max(k)];
+end
+
+lb = [lb_I_b; lb_I_sk_out; lb_I_sk_in; lb_V_sk];
+ub = [ub_I_b; ub_I_sk_out; ub_I_sk_in; ub_V_sk];
+
+%% parameters
+
+% for debugging from fig 6 in the paper
+epsilon =  0.7;
+sigma_1 = 26.0;
+sigma_2 =  0.8;
+gamma = 0.001;
+delta = 1.;
+
+method = 'logbarrier';
 
 
 %%
 
-    I_Mn = M_n(:, n);
-    
-    
-    % todo: optimize here
-    x0 = [I_b0, I_sk_out0, I_sk_in0, V_sk0];
-    
+% no inequality constraint here, only equality constraint
+A = [];
+b = [];
 
-% options = optimoptions(@fmincon,'Algorithm','interior-point','Display','off');
-% x = fmincon(@(x)x,1,[],[],[],[],0,[],[],options)
+
+% no nonlinear constraint
+nonlcon = [];
+
+% todo: check initial values
+x0 = [I_b0; I_sk_out0; I_sk_in0; V_sk0] .* 0;
+    
+fun = @(x)objective_fun_P1(x, sigma_1, sigma_2, epsilon, T, method);
+
+% according to matab documentation the interior-point Algorithm of fmincon
+% implements the Barrier Function approach to the minization
+% https://de.mathworks.com/help/optim/ug/constrained-nonlinear-optimization-algorithms.html
+options = optimoptions(@fmincon,'Algorithm','interior-point', ...
+            'Display','off', ...
+            'PlotFcn',{@optimplotx,@optimplotfval,@optimplotfirstorderopt} ...
+            );
+x = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon,options);
+% x = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon);
+
+
+%% get results
+
+cnt = 1;
+I_b = x(cnt:cnt+T-1);
+cnt = cnt + T;
+
+I_sk_out = x(cnt:cnt + K*T-1);
+cnt = cnt + K*T;
+
+I_sk_in = x(cnt:cnt + K*T-1);
+cnt = cnt + K*T;
+
+V_sk = x(cnt:cnt + K*T-1);
+cnt = cnt + K*T;
+
+I_sk = I_sk_out - I_sk_in;
+I_sk = reshape(I_sk,[T,K]);
+
+I_sk_out = reshape(I_sk_out,[T,K]);
+I_sk_in = reshape(I_sk_in,[T,K]);
+V_sk = reshape(V_sk,[T,K]);
+
+t = 1:T;
+
+figure(3);
+subplot(3,1,1);
+plot(t, I_b);
+ylabel('I_b')
+
+subplot(3,1,2);
+for k=1:k
+    plot(t, I_sk(:,k));
+end
+ylabel('I_{sk}')
+
+subplot(3,1,3);
+for k=1:k
+    plot(t, V_sk(:,k));
+end
+ylabel('V_{sk}')
+xlabel('t')
