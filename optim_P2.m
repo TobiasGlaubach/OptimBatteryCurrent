@@ -18,20 +18,20 @@ I_b0        = ones(T, 1) * 0;
 I_sk_out0   = ones(T, K) * 1;
 I_sk_in0    = ones(T, K) * 2;
 V_sk0       = ones(T, K) * 3;
+L_k0       = ones(T, K) * 4;
 
 I_b0        = reshape(I_b0,1,[]).';
 I_sk_out0   = reshape(I_sk_out0,1,[]).';
 I_sk_in0 	= reshape(I_sk_in0,1,[]).';
 V_sk0       = reshape(V_sk0,1,[]).';
+L_k0        = reshape(L_k0,1,[]).';
 
 x0 = [  I_b0;
         I_sk_out0;
         I_sk_in0;
-        V_sk0];
+        V_sk0;
+        L_k0];
     
-%% for debugging
-
-x = x0;
 
 
 %% constraint 1
@@ -44,6 +44,7 @@ x = x0;
 E = eye(T, T);
 A1 = E;
 A4 = zeros(T, T*K);
+A5 = zeros(T, T*K);
 
 A2 = [];
 A3 = [];
@@ -52,8 +53,8 @@ for k=1:K
     A3 = [A3, -E];
 end
 
-%        I_b,      I_sk_out, I_sk_in,  V_sk
-eq1_A = [A1,       A2,       -A3,      A4];
+%        I_b,      I_sk_out, I_sk_in,  V_sk, L_k
+eq1_A = [A1,       A2,       -A3,      A4,   A5];
 eq1_b =  sum(I_Mn, 2);
 
 if debug_lvl > 0
@@ -67,8 +68,9 @@ end
 
 % eq_lh = (A-I) * V_sk - D_k_out * I_sk_out - D_k_in * I_sk_in;
 % eq_rh = 0;
-% Z = zeros(T+1, T);
+
 Z = zeros(T, T);
+Z_k = zeros(T, K*T);
 
 % part 1: (A-I) * V_sk
 
@@ -106,8 +108,8 @@ for k=1:K
     D_k_in = [D_k_in, R_sk_max(k) - Delta / C_k(k) * tmp];
 end
 
-%         I_b,  I_sk_out, I_sk_in, V_sk
-eq2_A = [ Z,    -D_k_out, -D_k_in, A ];
+%         I_b,  I_sk_out, I_sk_in, V_sk, L_k
+eq2_A = [ Z,    -D_k_out, -D_k_in, A,    Z_k];
 
 % HACK: there seems to be an error in the paper, since rhs is set to be
 % length T in the paper, but needs to be T+1 for the math to work
@@ -129,6 +131,8 @@ end
 % eq_lh = E * V_sk
 % eq_rh = 0;
 
+Z_k = zeros(1, K*T);
+
 % HACK: there seems to be an error in the paper, since E is set to be
 % length T+1 in the paper, but needs to be T for the math to work
 E_sub = zeros(1, T);
@@ -148,15 +152,15 @@ end
 Z1 = zeros(1, T);
 Z2 = zeros(1, K*T);
 
-%         I_b,  I_sk_out,   I_sk_in, V_sk
-eq3_A = [ Z1,   Z2,         Z2,       E ];
+%         I_b,  I_sk_out,   I_sk_in, V_sk, L_k
+eq3_A = [ Z1,   Z2,         Z2,       E,   Z_k ];
 eq3_b = 0;
 
 if debug_lvl > 0
     eq3_A * x0 - eq3_b
 end
 
-%% combine all contraints to one
+%% combine all constraints to one
 Aeq = [
     eq1_A;
     eq2_A;
@@ -172,15 +176,110 @@ if debug_lvl > 0
     Aeq * x0 - beq
 end
 
+%% input for MIAD
+
+% initial values for testrun from fig 7
+sigma_1 = 2.0;
+sigma_2 = 0.5;
+alpha = 2;
+beta_1 = 2.0;
+beta_2 = 0.5;
+
+x0 = x0 .* 0;
+
+
+
+%% parameters
+
+% for debugging from fig 6 in the paper
+epsilon =  0.7;
+sigma_1 = 26.0;
+sigma_2 =  0.8;
+gamma = 0.001;
+delta = 1.;
+
+
+%% inequality constraint 1
+
+% constraint : -L_k <= I_sk_out - I_sk_in <= L_k
+% can be rewritten into: 
+%   (1): -L_k <= I_sk_out - I_sk_in
+%   (2): -L_k >= I_sk_out - I_sk_in
+%  which can be rewritten to:
+%   (1): -I_sk_out + I_sk_in - L_k <= 0
+%   (2):  I_sk_out - I_sk_in - L_k <= 0
+% which in matrix algebra is:
+
+Z          = zeros(T);
+Z_k        = zeros(T, K*T);
+
+E_I_sk_out = [];
+E_I_sk_in = [];
+E_L_k = [];
+for k=1:K
+    E_I_sk_out = [E_I_sk_out, eye(T)];
+    E_I_sk_in  = [E_I_sk_in,  eye(T)];
+    E_L_k      = [E_L_k,      eye(T)];
+end
+
+%      I_b,  I_sk_out,    I_sk_in,   V_sk,  L_k
+A_11 = [Z,   -E_I_sk_out,  E_I_sk_in, Z_k,  -E_L_k];
+b_11 = zeros(T, 1);
+
+%      I_b,  I_sk_out,    I_sk_in,   V_sk,  L_k
+A_12 = [Z,    E_I_sk_out, -E_I_sk_in, Z_k,  -E_L_k];
+b_12 = zeros(T, 1);
+
+%% inequality constraint 2
+
+% constraint : -sigma_1 <= F * I_b <= sigma_1
+% can be rewritten into: 
+%   (1):  F * I_b <= sigma
+%   (2):  F * I_b >= -sigma_1
+%  which can be rewritten to:
+%   (1):  F * I_b <= sigma_1
+%   (2): -F * I_b <= sigma_1
+% which in matrix algebra is:
+
+Z_k        = zeros(T-1, T*K);
+
+
+F = diag(ones(T-1,1), 1) - eye(T);
+F = F(1:T-1, :);
+
+%       I_b,  I_sk_out, I_sk_in, V_sk, L_k
+A_21 = [ F,    Z_k,      Z_k,     Z_k,  Z_k];
+b_21 = ones(T-1, 1) * sigma_1;
+
+%       I_b,  I_sk_out, I_sk_in, V_sk, L_k
+A_22 = [-F,    Z_k,      Z_k,     Z_k,  Z_k];
+b_22 = ones(T-1, 1) * sigma_1;
+
+
+%%  combine all inequality constraints
+A = [   A_11;
+        A_12;
+        A_21;
+        A_22];
+
+b = [   b_11;
+        b_12;
+        b_21;
+        b_22];
+
+if debug_lvl > 0
+    % test for debugging --> this must not fail
+   A * x0 - b 
+end
 %% set the boundaries
 
 % from mathworks documentation:
 % x(i) >= lb(i) for all i.
 % x(i) <= ub(i) for all i.
 
-% no constraint on I_b
-lb_I_b = ones(T, 1)* -inf;
-ub_I_b = ones(T, 1) * inf;
+% constraint on I_b -sigma_1 <= I_b <= sigma_1
+lb_I_b = ones(T, 1)* -sigma_1;  % I_b >= -sigma
+ub_I_b = ones(T, 1) * sigma_1;  % I_b <=  sigma
 
 % 0 <= I_sk_out
 lb_I_sk_out = zeros(T*K, 1);
@@ -197,18 +296,12 @@ for k=1:K
     ub_V_sk = [ub_V_sk; ones(T, 1) * V_sk_max(k)];
 end
 
-lb = [lb_I_b; lb_I_sk_out; lb_I_sk_in; lb_V_sk];
-ub = [ub_I_b; ub_I_sk_out; ub_I_sk_in; ub_V_sk];
+lb_L_k = ones(T*K, 1) * -inf;
+ub_L_k = ones(T*K, 1) *  inf;
 
-%% inequality constraint
+lb = [lb_I_b; lb_I_sk_out; lb_I_sk_in; lb_V_sk; lb_L_k];
+ub = [ub_I_b; ub_I_sk_out; ub_I_sk_in; ub_V_sk; ub_L_k];
 
-% no inequality constraint here, only equality constraint
-A = [];
-b = [];
-% 
-% disp('WARNING!!!! SETTING UNEQUALITY TO ZERO! FOR DEBUGGING')
-% Aeq = [];
-% beq = [];
 
 %% nonlinear constraint
 nonlcon = [];
@@ -218,35 +311,29 @@ nonlcon = [];
 % according to matab documentation the interior-point Algorithm of fmincon
 % implements the Barrier Function approach to the minization
 % https://de.mathworks.com/help/optim/ug/constrained-nonlinear-optimization-algorithms.html
-options = optimoptions(@fmincon,'Algorithm','interior-point', ...
-            'Display','off', ...
-            'PlotFcn',{@optimplotx,@optimplotfval,@optimplotfirstorderopt} ...
-            );
+options = optimoptions(@linprog,'Algorithm','interior-point', ...
+            'Display','iter');
         
+%% build objective function for P2
 
-%% input for MIAD
+% minimize : sum_k(R_sk * f_sub * L_k)
+%   where:
+%       R_sk is 1x1
+%       L_k is Tx1
+%       f_sub is 1xT
+%     for each k
 
-% initial values for testrun from fig 7
-sigma_1 = 2.0;
-sigma_2 = 0.5;
-alpha = 2;
-beta_1 = 2.0;
-beta_2 = 0.5;
+%    I_b         I_sk_out,     I_sk_in,      V_sk
+f = [zeros(1,T), zeros(1,T*K), zeros(1,T*K), zeros(1,T*K)];
+for k=1:K
+    f = [f,  R_sk_max(k) * ones(1,T)];
+end
 
+if debug_lvl > 0
+    % test for debugging --> this must not fail
+    f * x0
+end
 
-
-%% parameters
-
-% for debugging from fig 6 in the paper
-epsilon =  0.7;
-sigma_1 = 26.0;
-sigma_2 =  0.8;
-gamma = 0.001;
-delta = 1.;
-
-method = 'logbarrier';
-
-fun = @(x)objective_fun_P1(x, sigma_1, sigma_2, epsilon, T, method);
 
 
 %% MIAD
@@ -269,7 +356,7 @@ while run == 1
     % I_Mn is constant for us
     
     [x, fval, exitflag, output] = ...
-        fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon,options);
+            linprog(f,A,b,Aeq,beq,lb,ub,x0, options);
 
     output
     
