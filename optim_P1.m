@@ -202,6 +202,26 @@ end
 lb = [lb_I_b; lb_I_sk_out; lb_I_sk_in; lb_V_sk];
 ub = [ub_I_b; ub_I_sk_out; ub_I_sk_in; ub_V_sk];
 
+%% inequality constraint
+
+% no inequality constraint here, only equality constraint
+A = [];
+b = [];
+
+%% nonlinear constraint
+nonlcon = [];
+
+%% solver options
+
+% according to matab documentation the interior-point Algorithm of fmincon
+% implements the Barrier Function approach to the minization
+% https://de.mathworks.com/help/optim/ug/constrained-nonlinear-optimization-algorithms.html
+options = optimoptions(@fmincon,'Algorithm','interior-point', ...
+            'Display','off', ...
+            'PlotFcn',{@optimplotx,@optimplotfval,@optimplotfirstorderopt} ...
+            );
+        
+
 %% parameters
 
 % for debugging from fig 6 in the paper
@@ -213,32 +233,64 @@ delta = 1.;
 
 method = 'logbarrier';
 
-
-%%
-
-% no inequality constraint here, only equality constraint
-A = [];
-b = [];
-
-
-% no nonlinear constraint
-nonlcon = [];
-
-% todo: check initial values
-x0 = [I_b0; I_sk_out0; I_sk_in0; V_sk0] .* 0;
-    
 fun = @(x)objective_fun_P1(x, sigma_1, sigma_2, epsilon, T, method);
 
-% according to matab documentation the interior-point Algorithm of fmincon
-% implements the Barrier Function approach to the minization
-% https://de.mathworks.com/help/optim/ug/constrained-nonlinear-optimization-algorithms.html
-options = optimoptions(@fmincon,'Algorithm','interior-point', ...
-            'Display','off', ...
-            'PlotFcn',{@optimplotx,@optimplotfval,@optimplotfirstorderopt} ...
-            );
-x = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon,options);
-% x = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon);
+%% input for MIAD
 
+n = 1;
+m = 1;
+
+alpha = rand() + 1 + eps;
+beta_1 = rand() * (sigma_1 + eps);
+beta_2 = rand() * (sigma_2 + eps);
+
+%% MIAD
+
+while run == 1
+    
+	% I_Mn is constant for us
+    
+    x, fval, exitflag, output = fmincon(fun,x0, ...
+                                    A,b, ...
+                                    Aeq,beq, ...
+                                    lb,ub, ...
+                                    nonlcon, ...
+                                    options);
+
+    is_feasible = exitflag == -2;
+
+    if is_feasible == 1
+        if sigma_1 >= beta_1 && sigma_2 >= beta_2
+            if n == 1
+                temp_p1 = sigma_1;
+                sigma_1 = sigma_1 - beta_1;
+                n = 2;
+            else
+                temp_p2 = sigma_2;
+                sigma_2 = sigma_2 - beta_2;
+                n = 1;
+            end
+            % I_Mn is constant for us
+        end
+    else
+        if temp_p1 - sigma_1 == beta_1
+            sigma_1 = sigma_1 + beta_1;
+        end
+        if temp_p2 - sigma_2 == beta_2
+            sigma_2 = sigma_2 + beta_2;
+        end
+        
+        if temp_p1 - sigma_1 ~= beta_1 && temp_p2 - sigma_2 ~= beta_2
+            if m == 1
+                sigma_1 = alpha * sigma_1;
+                m = 2;
+            else
+                sigma_2 = alpha * sigma_2;
+                m = 1;
+            end
+        end
+    end
+end
 
 %% get results
 
