@@ -35,17 +35,17 @@ end
 
 function theta = deadzone(u, sigma)
 
-    if abs(u) < sigma
-        theta = 0;
-    else
-        theta = abs(u);
-    end
+    theta = abs(u);
+    idx = abs(u) < sigma;
+    theta(idx) = 0;
+
 end
 
 function theta = log_barrier(u, sigma)
-    if abs(u) < sigma
-        theta = -sigma^2 * log(1-(u/sigma).^2);
-    else
-        theta = inf;
-    end
+
+    theta = ones(size(u)) * inf;
+    tmp = -sigma^2 * log(1-(u/sigma).^2);
+    idx = abs(u) < sigma;
+    theta(idx) = tmp(idx);
+    
 end

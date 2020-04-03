@@ -41,6 +41,8 @@ x0 = [  I_b0;
 % eq_lh = I_B + sum(I_sk_out - I_sk_in);
 % eq_rh = sum(I_Mn, 2);
 
+% TODO: check math against paper again, not sure if this is right
+
 E = eye(T, T);
 A1 = E;
 A4 = zeros(T, T*K);
@@ -68,6 +70,8 @@ end
 
 % eq_lh = (A-I) * V_sk - D_k_out * I_sk_out - D_k_in * I_sk_in;
 % eq_rh = 0;
+
+% TODO: check math against paper again, not sure if this is right
 
 Z = zeros(T, T);
 Z_k = zeros(T, K*T);
