@@ -223,25 +223,20 @@ delta = 1.;
 %   (2):  I_sk_out - I_sk_in - L_k <= 0
 % which in matrix algebra is:
 
-Z          = zeros(T);
-Z_k        = zeros(T, K*(T+1));
+Z          = zeros(T*K, T);
+Z_k        = zeros(T*K, K*(T+1));
 
-E_I_sk_out = [];
-E_I_sk_in = [];
-E_L_k = [];
-for k=1:K
-    E_I_sk_out = [E_I_sk_out, eye(T)];
-    E_I_sk_in  = [E_I_sk_in,  eye(T)];
-    E_L_k      = [E_L_k,      eye(T)];
-end
+E_I_sk_out = eye(T*K);
+E_I_sk_in = eye(T*K);
+E_L_k = eye(T*K);
 
 %      I_b,  I_sk_out,    I_sk_in,   V_sk,  L_k
 A_11 = [Z,   -E_I_sk_out,  E_I_sk_in, Z_k,  -E_L_k];
-b_11 = zeros(T, 1);
+b_11 = zeros(T*K, 1);
 
 %      I_b,  I_sk_out,    I_sk_in,   V_sk,  L_k
 A_12 = [Z,    E_I_sk_out, -E_I_sk_in, Z_k,  -E_L_k];
-b_12 = zeros(T, 1);
+b_12 = zeros(T*K, 1);
 
 
 %%  combine all inequality constraints
