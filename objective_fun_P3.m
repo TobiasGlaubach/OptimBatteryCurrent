@@ -15,4 +15,3 @@ function [ fval ] = objective_fun_P3( x, sigma_1, sigma_2, epsilon, gamma, delta
     
 
 end
-

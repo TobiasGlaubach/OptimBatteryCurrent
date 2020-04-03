@@ -292,7 +292,9 @@ nonlcon = [];
 %             'PlotFcn',{@optimplotx,@optimplotfval,@optimplotfirstorderopt} ...
 %             );
 options = optimoptions(@fmincon,'Algorithm','interior-point', ...
-    'Display','off', 'MaxIter', 10000, 'MaxFunEvals', 10000);
+    'Display','iter', 'MaxIter', 3000, 'MaxFunEvals', 3000, ...
+    'TolCon', 1e-6);
+
 iter_req = 1;
 count_failed = 0;
 
@@ -515,20 +517,22 @@ title('L_k -(I_sk_out-I_sk_in) | should all be higher than zero')
 %% test constraints as implemented in matrix form
 
 figure(8)
-plot(Aeq * x - beq)
-title('Aeq * x - beq <= 0 | should all be less than zero')
+v = Aeq * x - beq;
+plot(v < 0)
+title('Aeq * x - beq <= 0 | should all be true')
 
 figure(9)
-plot(A * x - b)
-title('A * x - b = 0 | should all be zero')
+v = A * x - b;
+plot(abs(v) < options.TolCon );
+title('A * x - b = 0 | should all be true')
 
 %% test boundaries as implemented in matrix form
 
-figure(9)
+figure(10)
 plot(x >= lb)
 title('x >= lb | should all be true')
 
-figure(10)
+figure(11)
 plot(x <= ub)
 title('x <= ub | should all be true')
 
