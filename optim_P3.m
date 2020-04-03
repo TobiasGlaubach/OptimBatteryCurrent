@@ -3,7 +3,19 @@ close all;
 debug_lvl = 1
 
 %% generate the inpput data
+
+ 
+
+T = 200;
+K = 4;
 gen_test_data;
+
+% for debugging
+% T = 3; 
+% K = 2;
+% I_Mn = I_Mn(1:T, :);
+
+
 
 % HACK! this is given nowhere in the paper besides the info 
 % "We assume that the voltage and current are measured using discrete 
@@ -17,8 +29,8 @@ Delta = 200e-6;
 I_b0        = ones(T, 1) * 0;
 I_sk_out0   = ones(T, K) * 1;
 I_sk_in0    = ones(T, K) * 2;
-V_sk0       = ones(T, K) * 3;
-L_k0       = ones(T, K) * 4;
+V_sk0       = ones(T+1, K) * 3;
+L_k0        = ones(T, K) * 4;
 
 I_b0        = reshape(I_b0,1,[]).';
 I_sk_out0   = reshape(I_sk_out0,1,[]).';
@@ -41,22 +53,24 @@ x0 = [  I_b0;
 % eq_lh = I_B + sum(I_sk_out - I_sk_in);
 % eq_rh = sum(I_Mn, 2);
 
-% TODO: check math against paper again, not sure if this is right
+% in matrix form this should be:
+% [I,   I,    I,    I,    I,    -I,   -I,   -I,   -I] * 
+% [I_b, I_1o, I_2o, I_3o, I_4o, I_1i, I_2i, I_3i, I_4i]^T
 
-E = eye(T, T);
-A1 = E;
-A4 = zeros(T, T*K);
+I = eye(T, T);
+A1 = I;
+A4 = zeros(T, (T+1)*K);
 A5 = zeros(T, T*K);
 
 A2 = [];
 A3 = [];
 for k=1:K
-    A2 = [A2,  E];
-    A3 = [A3, -E];
+    A2 = [A2,  I];
+    A3 = [A3, -I];
 end
 
-%        I_b,      I_sk_out, I_sk_in,  V_sk, L_k
-eq1_A = [A1,       A2,       -A3,      A4,   A5];
+%        I_b, I_sk_out, I_sk_in,  V_sk, L_k
+eq1_A = [A1,  A2,       -A3,      A4,   A5];
 eq1_b = sum(I_Mn, 2);
 
 if debug_lvl > 0
@@ -64,69 +78,67 @@ if debug_lvl > 0
     eq1_A * x0 - eq1_b
 end
 
-%% constraint 2
+%% constraint 2 original implementation
 
 % constraint : (A-I) * V_sk - D_k_out * I_sk_out - D_k_in * I_sk_in = 0
 
 % eq_lh = (A-I) * V_sk - D_k_out * I_sk_out - D_k_in * I_sk_in;
 % eq_rh = 0;
 
-% TODO: check math against paper again, not sure if this is right
+% should in matrix form be 
+% [0, A-I, -D_k_out, -D_k_in, 0] *
+% [I_b, V_sk, I_sk_out, I_sk_in, L_k]^T
+% where the non zero terms must actually be concat k times
 
-Z = zeros(T, T);
-Z_k = zeros(T, K*T);
+Z = zeros(T+1, T);
+Z_k = zeros(T+1, K*T);
 
 % part 1: (A-I) * V_sk
+A11 = zeros(1, T);
+A11(1) = 1;
+A21 = eye(T);
+A22 = zeros(T,1);
 
-% HACK: The matrice construction in the paper seems to be wrong and will 
-% result in wrong dimensions since it will result in K*(T+1) rows, which can 
-% not be concat with the rest of the constraints. By my calculations it 
-% should be a simple unity matrix for each k. Gonna implement those here.
-tmp = eye(T);
+A_k = [A11, 0;
+        A21, A22];
+
+
+% stack K times
 A = [];
-for t=1:K
-    A = [A, tmp];
+for k=1:K
+    A = [A, A_k];
 end
+Ia = eye(size(A));
 
 % part 2: D_k_out * I_sk_out - D_k_in * I_sk_in
+tmp = [ zeros(1,T); 
+        eye(T)];
 
-
-% HACK: The matrice construction in the paper seems to be wrong and will 
-% result in wrong dimensions since it will result in K*(T+1) rows, which can 
-% not be concat with the rest of the constraints. By my calculations they 
-% should be lower triangular matrices. Gonna implement those here.
-
-%construct lower triangular matrix
-tmp = zeros(T);
-for t=1:T
-    tmp(t,1:t) = 1;
-end
-
-% HACK: The equivalence transformations from the paper might be wrong, my
-% calculations arrived at R_sk - Delta / C_k for both i_in and i_out
-%  --> not 100% sure about this, so I will leave the values from the paper.
-D_k_out = [];
-D_k_in = [];
+% stack K times
+D_out = [];
+D_in = [];
 for k=1:K
-    D_k_out = [D_k_out, R_sk_max(k) + Delta / C_k(k) * tmp];
-    D_k_in = [D_k_in, R_sk_max(k) - Delta / C_k(k) * tmp];
+    val1 = R_sk_max(k) + Delta / C_k(k);
+    val2 = R_sk_max(k) - Delta / C_k(k);
+    D_out = [D_out, val1 * tmp];
+    D_in = [D_in, val2 * tmp];
 end
 
-%         I_b,  I_sk_out, I_sk_in, V_sk, L_k
-eq2_A = [ Z,    -D_k_out, -D_k_in, A,    Z_k];
+%         I_b,  I_sk_out, I_sk_in,  V_sk,    L_k
+eq2_A = [ Z,    -D_out,   -D_in,    (A-Ia), Z_k];
 
-% HACK: there seems to be an error in the paper, since rhs is set to be
-% length T in the paper, but needs to be T+1 for the math to work
-eq2_b = zeros(T, 1);
+eq2_b = zeros(T+1, 1);
 
+
+% test for debugging --> this must not fail
 if debug_lvl > 0
-    % test for debugging --> this must not fail
-    D_k_out * I_sk_out0
-    D_k_in * I_sk_in0
+    D_out * I_sk_out0
+    D_in * I_sk_in0
     A * V_sk0
 
     eq2_A * x0 - eq2_b
 end
+
 
 %% constraint 3
 
@@ -135,32 +147,26 @@ end
 % eq_lh = E * V_sk
 % eq_rh = 0;
 
-Z_k = zeros(1, K*T);
-
-% HACK: there seems to be an error in the paper, since E is set to be
-% length T+1 in the paper, but needs to be T for the math to work
-E_sub = zeros(1, T);
+E_sub = zeros(1, T+1);
 E_sub(1) = 1;
 E_sub(end) = -1;
 
+% stack K times
 E = [];
 for k=1:K
     E = [E, E_sub];
-end
-
-if debug_lvl > 0
-    % test for debugging --> this must not fail
-    E * V_sk0
 end
 
 Z1 = zeros(1, T);
 Z2 = zeros(1, K*T);
 
 %         I_b,  I_sk_out,   I_sk_in, V_sk, L_k
-eq3_A = [ Z1,   Z2,         Z2,       E,   Z_k ];
+eq3_A = [ Z1,   Z2,         Z2,       E,   Z2 ];
 eq3_b = 0;
 
 if debug_lvl > 0
+    % test for debugging --> this must not fail
+    E * V_sk0
     eq3_A * x0 - eq3_b
 end
 
@@ -188,10 +194,7 @@ sigma_2 = 0.5;
 alpha = 2;
 beta_1 = 2.0;
 beta_2 = 0.5;
-x0 = x0 .* 0;
-
-
-
+x0 = x0 .* 0
 
 %% parameters
 
@@ -208,14 +211,20 @@ delta = 1.;
 % constraint : -L_k <= I_sk_out - I_sk_in <= L_k
 % can be rewritten into: 
 %   (1): -L_k <= I_sk_out - I_sk_in
-%   (2): -L_k >= I_sk_out - I_sk_in
+%   (2): I_sk_out - I_sk_in <= L_k      | switch sides
+% can be rewritten into: 
+%   (1): -L_k <= I_sk_out - I_sk_in
+%   (2):  L_k >= I_sk_out - I_sk_in     | * -1
+% can be rewritten into: 
+%   (1): -L_k <=  I_sk_out - I_sk_in    | -I_sk_out | +I_sk_in
+%   (2): -L_k <= -I_sk_out + I_sk_in    | +I_sk_out | -I_sk_in
 %  which can be rewritten to:
 %   (1): -I_sk_out + I_sk_in - L_k <= 0
 %   (2):  I_sk_out - I_sk_in - L_k <= 0
 % which in matrix algebra is:
 
 Z          = zeros(T);
-Z_k        = zeros(T, K*T);
+Z_k        = zeros(T, K*(T+1));
 
 E_I_sk_out = [];
 E_I_sk_in = [];
@@ -265,10 +274,10 @@ lb_I_sk_in = zeros(T*K, 1);
 ub_I_sk_in = ones(T*K, 1) * inf;
 
 % 0 <= V_sk <= V_sk_max | for each k
-lb_V_sk = zeros(T*K, 1);
+lb_V_sk = zeros((T+1)*K, 1);
 ub_V_sk = [];
 for k=1:K
-    ub_V_sk = [ub_V_sk; ones(T, 1) * V_sk_max(k)];
+    ub_V_sk = [ub_V_sk; ones(T+1, 1) * V_sk_max(k)];
 end
 
 % no constraint on L_k
@@ -308,7 +317,7 @@ count_failed = 0;
 %     for each k
 
 %    I_b         I_sk_out,     I_sk_in,      V_sk
-f = [zeros(1,T), zeros(1,T*K), zeros(1,T*K), zeros(1,T*K)];
+f = [zeros(1,T), zeros(1,T*K), zeros(1,T*K), zeros(1,(T+1)*K)];
 for k=1:K
     f = [f,  R_sk_max(k) * ones(1,T)];
 end
