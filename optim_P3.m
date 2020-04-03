@@ -188,8 +188,8 @@ sigma_2 = 0.5;
 alpha = 2;
 beta_1 = 2.0;
 beta_2 = 0.5;
-
 x0 = x0 .* 0;
+
 
 
 
@@ -463,14 +463,14 @@ ylabel('V_{s}')
 legend(l)
 xlabel('t')
 
-%% test constrains
+%% test constrains as given in equations
 
 % first constraint
 vals_c1 = I_b + sum(I_sk_out - I_sk_in, 2) - sum(I_Mn, 2);
 
 figure(4)
 plot(vals_c1)
-title('should all be zero')
+title('I_b + sum(I_sk_out - I_sk_in, 2) - sum(I_Mn, 2) | should all be zero')
 
 % second constraint
 vals_c2 = zeros(T,1);
@@ -482,12 +482,11 @@ for k=1:K
 end
 
 figure(5)
-
 plot(vals_c1)
+title('second sconstraint | should all be zero')
 
 % third constraint
 disp(['should be zero:', num2str(V_sk(1) - V_sk(end))])
-title('should all be zero')
 
 % fourth constraint - lb
 
@@ -495,26 +494,41 @@ title('should all be zero')
 vals_c31 = (I_sk_out-I_sk_in)-L_k;
 
 figure(6)
-
 for k=1:K
     plot(vals_c31(:,k))
     hold on
 end
 plot(vals_c1 .* 0, 'k')
-title('should all be higher than zero')
+title('(I_sk_out-I_sk_in)+L_k  | should all be higher than zero')
 
 % (I_sk_out-I_sk_in) <= L_k
-
 vals_c32 = L_k -(I_sk_out-I_sk_in);
 
 figure(7)
-title('should all be higher than zero')
 for k=1:K
     plot(vals_c32(:,k))
     hold on
 end
 plot(vals_c1 .* 0, 'k')
+title('L_k -(I_sk_out-I_sk_in) | should all be higher than zero')
 
+%% test constraints as implemented in matrix form
 
+figure(8)
+plot(Aeq * x - beq)
+title('Aeq * x - beq <= 0 | should all be less than zero')
 
+figure(9)
+plot(A * x - b)
+title('A * x - b = 0 | should all be zero')
+
+%% test boundaries as implemented in matrix form
+
+figure(9)
+plot(x >= lb)
+title('x >= lb | should all be true')
+
+figure(10)
+plot(x <= ub)
+title('x <= ub | should all be true')
 

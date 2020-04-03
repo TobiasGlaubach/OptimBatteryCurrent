@@ -10,7 +10,7 @@ function [ fval ] = objective_fun_P3( x, sigma_1, sigma_2, epsilon, gamma, delta
     val_2 = (1-epsilon) * sum(penalty_function(diff(I_b), sigma_2, method));
     
     fval = gamma * (val_1 + val_2) + delta * f * x;
-    
+%     disp(fval)
     return 
     
 
