@@ -1,21 +1,23 @@
 clear;
 close all;
+
 debug_lvl = 1
+iter_req = 1;
+count_failed = 1;
+
+T = 200;
+K = 4;
+
+TolCon = 1e-6;
+MaxIter = 4000;
+MaxFunEvals = 4000;
 
 %% generate the inpput data
 
  
 
-T = 200;
-K = 4;
+
 gen_test_data;
-
-% for debugging
-% T = 3; 
-% K = 2;
-% I_Mn = I_Mn(1:T, :);
-
-
 
 % HACK! this is given nowhere in the paper besides the info 
 % "We assume that the voltage and current are measured using discrete 
@@ -303,11 +305,10 @@ nonlcon = [];
 %             'PlotFcn',{@optimplotx,@optimplotfval,@optimplotfirstorderopt} ...
 %             );
 options = optimoptions(@fmincon,'Algorithm','interior-point', ...
-    'Display','iter', 'MaxIter', 120000, 'MaxFunEvals', 120000, ...
-    'TolCon', 1e-6);
+    'Display','iter', 'MaxIter', MaxIter, 'MaxFunEvals', MaxFunEvals, ...
+    'TolCon', TolCon);
 
-iter_req = 1;
-count_failed = 0;
+
 
 %% build objective function for P2
 
@@ -335,7 +336,8 @@ method = 'logbarrier';
 
 fun = @(x)objective_fun_P3(x, sigma_1, sigma_2, epsilon, gamma, delta, T, method, f);
 
-        
+% rng('shuffle')
+% x0=randn(size(x0));
 
 %% MIAD
 
