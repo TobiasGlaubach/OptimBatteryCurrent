@@ -9,13 +9,10 @@ T = 200;
 K = 4;
 
 TolCon = 1e-6;
-MaxIter = 4000;
-MaxFunEvals = 4000;
+MaxIter = 10000;
+MaxFunEvals = 10000;
 
 %% generate the inpput data
-
- 
-
 
 gen_test_data;
 
@@ -24,7 +21,7 @@ gen_test_data;
 % signals with a sufficiently small sampling period"
 
 % just set some value which is reasonable for sampling
-Delta = 200e-6;
+Delta = 0.01;
  
 %% initial conditions
 
