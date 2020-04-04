@@ -10,11 +10,11 @@ DOI: 10.1109/TSG.2011.2164816
 
 It seems there might be some issues in the paper. At this point it is not sure how they will influence the results/calculation. The issues are as follows:
 
-- The value for Delta is given nowhere in the paper besides the info "We assume that the voltage and current are measured using discrete signals with a sufficiently small sampling period". The stepping for $t \in T$ is $1$ therefore I set $\Delta$ to `Delta = 200e-6$;` (200 microseconds), since that seemed a reasonable number for a sampling interval for currents.
+- The value for Delta is given nowhere in the paper besides the info "We assume that the voltage and current are measured using discrete signals with a sufficiently small sampling period". The stepping for $t \in T$ is $1$ therefore I set $\Delta$ to `Delta = 200e-6;` (200 microseconds), since that seemed a reasonable number for a sampling interval for currents.
 
 - The "equivalent cost function" mentioned in the paper $f(\cdot)$ for finding $\epsilon$ is not defined. However they define a value for epsilon they used. This value is $\epsilon=0.7$ which I used.
 
-- For the MIAD algorithm (Algorithm 2 in the paper), the initial values for $temp_14 and $temp_2$ are not set / not defined. I set them to be $\sigma_1$ and $\sigma_2$ initially, since they will be overwritten after the first iteration within the MIAD algorithm anyways.
+- For the MIAD algorithm (Algorithm 2 in the paper), the initial values for $temp_1$ and $temp_2$ are not set / not defined. I set them to be $\sigma_1$ and $\sigma_2$ initially, since they will be overwritten after the first iteration within the MIAD algorithm anyways.
 
 - Within the proof of 2nd constraint in the appendix in the fifth line, the equation seems to be missing a minus sign between the two terms $I_{s_k}^{out}$ and $I_{s_k}^{in}$. I think the author just missed the minus while typing the equation out. Because otherwise the equation would not be equal to the equation in the fourth line
 
@@ -25,9 +25,10 @@ It seems there might be some issues in the paper. At this point it is not sure h
 ## Logic / Algorithm Implmeneted in the Paper
 
 Now what I think about the logic in the paper:
+
 - The authors minimize a pretty complex objective/penalty function, they do this because they claim it reflects how the battery would deteriorate with RMS current and fluctuations. From my experience it does not matter, which objective function to minimize, as long as the objective function represents the goals, therefore  I think using a simpler objective function would yield the same results but make computation easier.
 
-- The authors introduced $L_k$ in **P2** (and therefore also **P3**) in order to map the **P2** problem to a LP optimization problem. As I see it: when combining **P1** and **P2** to **P3**, **P1** is not LP but a convex problem, therefore we gain nothing by mapping **P2** to a LP problem, and it is not necessary to introduce the additional L_k terms, which result in the additional inequality constraint $A\cdot x <= b$ as well as $K\cdot T$ more variables in $x$. Instead it should be possible to directly minimize the $sum_{k\in K} || I_sk_out - I_sk_in ||_1 $ term.
+- The authors introduced $L_k$ in **P2** (and therefore also **P3**) in order to map the **P2** problem to a LP optimization problem. As I see it: when combining **P1** and **P2** to **P3**, **P1** is not LP but a convex problem, therefore we gain nothing by mapping **P2** to a LP problem, and it is not necessary to introduce the additional L_k terms, which result in the additional inequality constraint $A\cdot x <= b$ as well as $K\cdot T$ more variables in $x$. Instead it should be possible to directly minimize the $\sum_{k\in K} || I_{s_k}^{out} - I_{s_k}^{in} ||_1 $ term.
 
 ## Input Values
 The authors do not give any values for M1-M6, only plots of those. 
