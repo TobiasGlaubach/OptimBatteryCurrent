@@ -6,7 +6,7 @@ v_sk0 = 0;
 T = 200;
 K = 4;
 
-TolCon = 1e-6;
+TolCon = 1e-16;
 MaxIter = 10000;
 MaxFunEvals = 1000000;
 
@@ -104,7 +104,13 @@ method = 'logbarrier';
 
 %% initial conditions
 
-x0 = zeros(size(x0));
+% x0 = zeros(size(x0));
+
+% rng('shuffle')
+% x0 = rand(size(x0));
+
+load('x_start0.mat', 'x')
+x0 = x;
 
 %% MIAD
 
@@ -112,26 +118,39 @@ x = x0;
 
 fun = @(x) objective_fun_P3_adj(x, R_sk_max, gamma, epsilon, delta, T, K);
 
-x0 = x;
-[x, fval, exitflag, output] = ...
-    fmincon(fun,x,[],[],[],[],lb,ub,nonlcon,options);
-x0 = x;
-[x, fval, exitflag, output] = ...
-    fmincon(fun,x,[],[],[],[],lb,ub,nonlcon,options);
-
-x0 = x;
-[x, fval, exitflag, output] = ...
-    fmincon(fun,x,[],[],[],[],lb,ub,nonlcon,options);
-
-
-output
+while 1
+    
+    x0 = x;
+    [x, fval, exitflag, output] = ...
+        fmincon(fun,x,[],[],[],[],lb,ub,nonlcon,options);
+    
+    output
+    disp(output.message)
+    
+    save('x_start0', 'x', 'output');
+    
+    if exitflag == -1
+        break
+    end
+    
+    if exitflag ~= 0
+        if exitflag ~= -2
+            filename = ['minima_', datestr(now,'yyyy-mm-dd_HHMMSS') '.mat'];
+            save(filename)
+        end
+    
+        rng('shuffle');
+        x = rand(size(x));
+    end
+    
+end
 
 is_feasible = exitflag ~= -2;
 if(is_feasible)
     disp(['Solution is OK (feasible) exitflag=', num2str(exitflag)])
     disp(['fval: ', num2str(fval)])
 else
-    disp('Solution is NOT OK (NOT feasible) exitflag=', num2str(exitflag)')
+    disp(['Solution is NOT OK (NOT feasible) exitflag=', num2str(exitflag)])
     output.message
 end
 
@@ -152,7 +171,7 @@ V_sk = reshape(V_sk,[T,K]);
 t = 1:T;
 
 %% plot results
-figure(3);
+figure();
 
 subplot(3,1,1);
 plot(t, I_b);
@@ -188,7 +207,7 @@ xlabel('t')
 % first constraint
 vals_c1 = I_b + sum(I_sk, 2) - sum(I_Mn, 2);
 
-figure(4)
+figure()
 plot(vals_c1)
 title('$$I_b + \sum_{k \in K}(I_{s_k}) - \sum_{n \in N}(I_{M_n}) = 0$$ ??','interpreter','latex')
 ylabel('should all be zero')
@@ -200,7 +219,7 @@ for k=1:K
     vals_c2 = vals_c2 + V_sk(:,k) - sumval;
 end
 
-figure(5)
+figure()
 plot(vals_c2)
 title('second sconstraint | should all be zero')
 
