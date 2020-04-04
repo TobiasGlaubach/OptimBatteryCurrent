@@ -90,44 +90,51 @@ end
 % [I_b, V_sk, I_sk_out, I_sk_in, L_k]^T
 % where the non zero terms must actually be concat k times
 
-Z = zeros(T+1, T);
-Z_k = zeros(T+1, K*T);
-
 % part 1: (A-I) * V_sk
 A11 = zeros(1, T);
-A11(1) = 1;
+A11(1,1) = 1;
 A21 = eye(T);
 A22 = zeros(T,1);
 
-A_k = [A11, 0;
+A_k = [ A11, 0;
         A21, A22];
 
-
-% stack K times
-A = [];
+% build block diagonalmatrix with K blocks on diagonal
+args = cell(K);
 for k=1:K
-    A = [A, A_k];
+    args{k} = A_k;
 end
+A = blkdiag(args{:});
 Ia = eye(size(A));
 
 % part 2: D_k_out * I_sk_out - D_k_in * I_sk_in
 tmp = [ zeros(1,T); 
         eye(T)];
-
-% stack K times
-D_out = [];
-D_in = [];
+    
+args1 = cell(K);
+args2 = cell(K);
 for k=1:K
-    val1 = R_sk_max(k) + Delta / C_k(k);
-    val2 = R_sk_max(k) - Delta / C_k(k);
-    D_out = [D_out, val1 * tmp];
-    D_in = [D_in, val2 * tmp];
+    c1 = R_sk_max(k) + Delta / C_k(k);
+    c2 = R_sk_max(k) - Delta / C_k(k);
+    args1{k} = c1 * tmp;
+    args2{k} = c2 * tmp;
 end
+D_out = blkdiag(args1{:});
+D_in = blkdiag(args2{:});
+
+Z = zeros(size(D_out, 1), T);
+Z_k = zeros(size(D_out, 1), K*T);
 
 %         I_b,  I_sk_out, I_sk_in,  V_sk,    L_k
 eq2_A = [ Z,    -D_out,   -D_in,    (A-Ia), Z_k];
+eq2_b = zeros(size(D_out, 1), 1);
 
-eq2_b = zeros(T+1, 1);
+
+% get all non zero rows
+idx = sum(abs(eq2_A), 2) > 0;
+% exclude all zero rows
+eq2_A = eq2_A(idx,:);
+eq2_b = eq2_b(idx,:);
 
 
 % test for debugging --> this must not fail
@@ -296,7 +303,7 @@ nonlcon = [];
 %             'PlotFcn',{@optimplotx,@optimplotfval,@optimplotfirstorderopt} ...
 %             );
 options = optimoptions(@fmincon,'Algorithm','interior-point', ...
-    'Display','iter', 'MaxIter', 3000, 'MaxFunEvals', 3000, ...
+    'Display','iter', 'MaxIter', 120000, 'MaxFunEvals', 120000, ...
     'TolCon', 1e-6);
 
 iter_req = 1;
@@ -342,6 +349,7 @@ if beta_2 < 0 && beta_2 >= sigma_2
    error('beta_2 must be bigger than 0 and smaller sigma_2') 
 end
 
+x = x0;
 n = 1;
 m = 1;
 run = 1;
@@ -359,9 +367,10 @@ while n_iter < iter_req
         disp(['n_iter: ', num2str(n_iter)])
         
     end
-
+    
+    x0 = x;
     [x, fval, exitflag, output] = ...
-        fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon,options);
+        fmincon(fun,x,A,b,Aeq,beq,lb,ub,nonlcon,options);
 
     output
     
