@@ -40,7 +40,7 @@ I_Mn = [M1, M2, M3, M4, M5, M6];
 
 
 %% plot test data M1-M3
-figure(1);
+figure();
 subplot(3,1,1);
 plot(t, M1);
 ylabel('M1')
@@ -57,7 +57,7 @@ xlabel('t')
 ylim([-5, 110])
 
 %% plot test data M4-M6
-figure(1);
+figure();
 subplot(3,1,1);
 plot(t, M4);
 ylabel('M4')
