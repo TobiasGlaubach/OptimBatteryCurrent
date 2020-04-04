@@ -48,5 +48,7 @@ ceq3 = ceq3 * T;
 
 % TODO: Check for scales of the values maybe one dominates the other
 ceq = ceq1 + ceq2 + ceq3;
+
+ceq = 10000 * ceq;
 c  = [];
 
