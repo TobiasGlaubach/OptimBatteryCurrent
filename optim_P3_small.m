@@ -62,7 +62,7 @@ K = 4;
 % parameters for solver:
 TolCon = 1e-12;
 MaxIter = 10000;
-MaxFunEvals = 100000;
+MaxFunEvals = 50000;
 
 
 %% generate input Data
@@ -105,13 +105,16 @@ end
 rng(10000)
 
 M4 = rand(T, 1) * 10 + 10 * sin(linspace(0, 150 * 2 * pi, T)');
-% M4 = smooth(M4, 4);
 M4 = M4 - mean(M4);
 
-M5 = smooth(rand(T, 1) * 20, 10);
+a_filt = ones(10,1)/10;
+M5 = rand(T, 1) * 20;
+M5 = conv(M5, a_filt, 'same');
 M5 = M5 - mean(M5);
 
-M6 = smooth(rand(T, 1) * 40, 10) + 2 * sin(linspace(0, 20 * 2 * pi, T)');
+M6 = rand(T, 1) * 40;
+M6 = conv(M6, a_filt, 'same');
+M6 = M6 + 2 * sin(linspace(0, 20 * 2 * pi, T)');
 M6 = M6 - mean(M6);
 M6(19:40) = 0;
 M6(80:90) = 0;
