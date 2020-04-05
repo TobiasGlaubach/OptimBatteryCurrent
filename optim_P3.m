@@ -48,19 +48,9 @@ x0 = [  I_b0;
 
 prepare_P3;
 
-%% input for MIAD
-
-% initial values for testrun from fig 7
-sigma_1 = 2.0;
-sigma_2 = 0.5;
-alpha = 2;
-beta_1 = 2.0;
-beta_2 = 0.5;
-x0 = x0 .* 0
-
 %% parameters
 
-% for debugging from fig 6 in the paper
+% from fig 6 in the paper
 epsilon =  0.7;
 sigma_1 = 26.0;
 sigma_2 =  0.8;
@@ -80,6 +70,15 @@ sigma_2 = 0.5;
 alpha = 2;
 beta_1 = 2.0;
 beta_2 = 0.5;
+
+if exist('x_start_orig_0.mat','file')
+    load('x_start_orig_0.mat', 'x');
+    x0 = x;
+else
+    rng('shuffle')
+    x0 = rand(size(x));
+end
+
 
 
 %% parameters
@@ -119,7 +118,7 @@ if beta_2 < 0 && beta_2 >= sigma_2
    error('beta_2 must be bigger than 0 and smaller sigma_2') 
 end
 
-x = x0 .* 0;
+
 n = 1;
 m = 1;
 run = 1;
