@@ -203,8 +203,8 @@ cnt = cnt + K*T;
 I_sk_in = x(cnt:cnt + K*T-1);
 cnt = cnt + K*T;
 
-V_sk = x(cnt:cnt + K*T-1);
-cnt = cnt + K*T;
+V_sk = x(cnt:cnt + K*(T+1)-1);
+cnt = cnt + K*(T+1);
 
 L_k = x(cnt:cnt + K*T-1);
 
@@ -213,7 +213,7 @@ I_sk = I_sk_out - I_sk_in;
 I_sk = reshape(I_sk,[T,K]);
 I_sk_out = reshape(I_sk_out,[T,K]);
 I_sk_in = reshape(I_sk_in,[T,K]);
-V_sk = reshape(V_sk,[T,K]);
+V_sk = reshape(V_sk,[T+1,K]);
 L_k = reshape(L_k,[T,K]);
 t = 1:T;
 
@@ -239,7 +239,7 @@ legend(l)
 subplot(3,1,3);
 l = {};
 for k=1:K
-    plot(t, V_sk(:,k));
+    plot([0, t], V_sk(:,k));
     l{k} = ['V_{s', num2str(k), '}'];
     hold on;
 end
@@ -261,7 +261,7 @@ vals_c2 = zeros(T,1);
 for k=1:K
     sumval = Delta/C_k(k) * I_sk(:,k) + R_sk_max(k) * abs(I_sk(:,k));
     
-    vals_c2 = vals_c2 + V_sk(:,k);
+    vals_c2 = vals_c2 + V_sk(2:end,k);
     vals_c2 = vals_c2 - cumsum(sumval);
 end
 
