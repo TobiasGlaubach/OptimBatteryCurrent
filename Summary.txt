@@ -1,0 +1,29 @@
+The use is: 
+The software I supplied implements the scheme shown in the paper to attemp to solve the minimization problem given. It runs exception free on MATLAB R2015b with the optimization toolbox installed. It was checked 3 times to make sure it exactly matches the scheme shown in the paper. It shows the results obtained after the run in a form very similar to figure 6 in the paper. It can be used to perform aditional studies with the same or different parameter sets and visualize the results.
+
+
+
+========================
+The summary:
+Based on my analysis there seems to be some inconsistent math in the paper (Especially in the proof in Appendix A) 
+--> For the math I implemented exactly what is described in the paper.
+
+There are some missing values for the parameters used for the solver.
+--> For the missing parameters I came up with similar values as far as possible.
+
+The authors did not describe any of their initial values used.
+--> For the initial values I started with a random numbers, and later always reused the results from previous runs as startingpoints.
+
+The authors did not give exact values for the inputs M1-M6.
+---> I was able to reverse engineer M1-M3 for M4-M6 I came up with some vectors which look  reassonably similar to the ones shown the paper. For the parameter T to generate these values I used T=200 to match the plots in the paper, resulting in 3404 parameters to minimize.
+
+
+For the chosen parameters and initial values, the scheme seems to be converging to some kind of minima, but did not converge to the results shown in the paper within a few runs with max 10 thousand iterations and max 1 million function calls (which take up to 20min on my machine)
+--> A different implementation to solve the same problem showed similar behaviour but faster convergence. So I assume this rate of convergence is what is to be expected.
+
+==========================
+I will supply:
+- The program described above implementing the original math from the paper as one single .m file.
+- The latest vector x=x0 for initial values I obtained from my last run in MATLAB .mat format.
+- A textfile showing that my math matches the math given in the paper based on MATLABs Symbolic Math Toolbox.
+- A report in HTML format generated from running the program on my machine.

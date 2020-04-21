@@ -3,7 +3,7 @@
 
 C_k = [50, 150, 310, 350];          % in [F]
 V_sk_max = [2.7, 2.7, 2.7, 2.7];    % in [V]
-R_sk_max = [20, 14, 2.2, 3.2]*1e3;  % in [mOhm]
+R_sk_max = [20, 14, 2.2, 3.2]*1e-3;  % in [Ohm]
 
 
 M1 = 5 * ones(T, 1);
@@ -40,7 +40,7 @@ I_Mn = [M1, M2, M3, M4, M5, M6];
 
 
 %% plot test data M1-M3
-figure(1);
+figure();
 subplot(3,1,1);
 plot(t, M1);
 ylabel('M1')
@@ -57,7 +57,7 @@ xlabel('t')
 ylim([-5, 110])
 
 %% plot test data M4-M6
-figure(1);
+figure();
 subplot(3,1,1);
 plot(t, M4);
 ylabel('M4')

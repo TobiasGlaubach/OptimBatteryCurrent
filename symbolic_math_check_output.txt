@@ -1,0 +1,175 @@
+
+T =
+
+     4
+
+
+K =
+
+     2
+
+ 
+x0 =
+ 
+       I_b1
+       I_b2
+       I_b3
+       I_b4
+ I_s1_out_1
+ I_s1_out_2
+ I_s1_out_3
+ I_s1_out_4
+ I_s2_out_1
+ I_s2_out_2
+ I_s2_out_3
+ I_s2_out_4
+  I_s1_in_1
+  I_s1_in_2
+  I_s1_in_3
+  I_s1_in_4
+  I_s2_in_1
+  I_s2_in_2
+  I_s2_in_3
+  I_s2_in_4
+     V_s1_0
+     V_s1_1
+     V_s1_2
+     V_s1_3
+     V_s1_4
+     V_s2_0
+     V_s2_1
+     V_s2_2
+     V_s2_3
+     V_s2_4
+     L_k1_1
+     L_k1_2
+     L_k1_3
+     L_k1_4
+     L_k2_1
+     L_k2_2
+     L_k2_3
+     L_k2_4
+ 
+eq1_A * x0 - eq1_b
+ 
+ans =
+ 
+ I_b1 - I_m1_1 - I_m2_1 - I_s1_in_1 - I_s2_in_1 + I_s1_out_1 + I_s2_out_1
+ I_b2 - I_m1_2 - I_m2_2 - I_s1_in_2 - I_s2_in_2 + I_s1_out_2 + I_s2_out_2
+ I_b3 - I_m1_3 - I_m2_3 - I_s1_in_3 - I_s2_in_3 + I_s1_out_3 + I_s2_out_3
+ I_b4 - I_m1_4 - I_m2_4 - I_s1_in_4 - I_s2_in_4 + I_s1_out_4 + I_s2_out_4
+ 
+D_out * I_sk_out0
+ 
+ans =
+ 
+                             0
+ I_s1_out_1*(R_s1 + Delta/C_1)
+ I_s1_out_2*(R_s1 + Delta/C_1)
+ I_s1_out_3*(R_s1 + Delta/C_1)
+ I_s1_out_4*(R_s1 + Delta/C_1)
+                             0
+ I_s2_out_1*(R_s2 + Delta/C_2)
+ I_s2_out_2*(R_s2 + Delta/C_2)
+ I_s2_out_3*(R_s2 + Delta/C_2)
+ I_s2_out_4*(R_s2 + Delta/C_2)
+ 
+D_in * I_sk_in0
+ 
+ans =
+ 
+                            0
+ I_s1_in_1*(R_s1 - Delta/C_1)
+ I_s1_in_2*(R_s1 - Delta/C_1)
+ I_s1_in_3*(R_s1 - Delta/C_1)
+ I_s1_in_4*(R_s1 - Delta/C_1)
+                            0
+ I_s2_in_1*(R_s2 - Delta/C_2)
+ I_s2_in_2*(R_s2 - Delta/C_2)
+ I_s2_in_3*(R_s2 - Delta/C_2)
+ I_s2_in_4*(R_s2 - Delta/C_2)
+ 
+A * V_sk0
+ 
+ans =
+ 
+ V_s1_0
+ V_s1_0
+ V_s1_1
+ V_s1_2
+ V_s1_3
+ V_s2_0
+ V_s2_0
+ V_s2_1
+ V_s2_2
+ V_s2_3
+ 
+eq2_A * x0 - eq2_b
+ 
+ans =
+ 
+ V_s1_0 - V_s1_1 - I_s1_in_1*(R_s1 - Delta/C_1) - I_s1_out_1*(R_s1 + Delta/C_1)
+ V_s1_1 - V_s1_2 - I_s1_in_2*(R_s1 - Delta/C_1) - I_s1_out_2*(R_s1 + Delta/C_1)
+ V_s1_2 - V_s1_3 - I_s1_in_3*(R_s1 - Delta/C_1) - I_s1_out_3*(R_s1 + Delta/C_1)
+ V_s1_3 - V_s1_4 - I_s1_in_4*(R_s1 - Delta/C_1) - I_s1_out_4*(R_s1 + Delta/C_1)
+ V_s2_0 - V_s2_1 - I_s2_in_1*(R_s2 - Delta/C_2) - I_s2_out_1*(R_s2 + Delta/C_2)
+ V_s2_1 - V_s2_2 - I_s2_in_2*(R_s2 - Delta/C_2) - I_s2_out_2*(R_s2 + Delta/C_2)
+ V_s2_2 - V_s2_3 - I_s2_in_3*(R_s2 - Delta/C_2) - I_s2_out_3*(R_s2 + Delta/C_2)
+ V_s2_3 - V_s2_4 - I_s2_in_4*(R_s2 - Delta/C_2) - I_s2_out_4*(R_s2 + Delta/C_2)
+ 
+E * V_sk0
+ 
+ans =
+ 
+V_s1_0 - V_s1_4 + V_s2_0 - V_s2_4
+ 
+eq3_A * x0 - eq3_b
+ 
+ans =
+ 
+V_s1_0 - V_s1_4 + V_s2_0 - V_s2_4
+ 
+Aeq * x0 - beq
+ 
+ans =
+ 
+       I_b1 - I_m1_1 - I_m2_1 - I_s1_in_1 - I_s2_in_1 + I_s1_out_1 + I_s2_out_1
+       I_b2 - I_m1_2 - I_m2_2 - I_s1_in_2 - I_s2_in_2 + I_s1_out_2 + I_s2_out_2
+       I_b3 - I_m1_3 - I_m2_3 - I_s1_in_3 - I_s2_in_3 + I_s1_out_3 + I_s2_out_3
+       I_b4 - I_m1_4 - I_m2_4 - I_s1_in_4 - I_s2_in_4 + I_s1_out_4 + I_s2_out_4
+ V_s1_0 - V_s1_1 - I_s1_in_1*(R_s1 - Delta/C_1) - I_s1_out_1*(R_s1 + Delta/C_1)
+ V_s1_1 - V_s1_2 - I_s1_in_2*(R_s1 - Delta/C_1) - I_s1_out_2*(R_s1 + Delta/C_1)
+ V_s1_2 - V_s1_3 - I_s1_in_3*(R_s1 - Delta/C_1) - I_s1_out_3*(R_s1 + Delta/C_1)
+ V_s1_3 - V_s1_4 - I_s1_in_4*(R_s1 - Delta/C_1) - I_s1_out_4*(R_s1 + Delta/C_1)
+ V_s2_0 - V_s2_1 - I_s2_in_1*(R_s2 - Delta/C_2) - I_s2_out_1*(R_s2 + Delta/C_2)
+ V_s2_1 - V_s2_2 - I_s2_in_2*(R_s2 - Delta/C_2) - I_s2_out_2*(R_s2 + Delta/C_2)
+ V_s2_2 - V_s2_3 - I_s2_in_3*(R_s2 - Delta/C_2) - I_s2_out_3*(R_s2 + Delta/C_2)
+ V_s2_3 - V_s2_4 - I_s2_in_4*(R_s2 - Delta/C_2) - I_s2_out_4*(R_s2 + Delta/C_2)
+                                              V_s1_0 - V_s1_4 + V_s2_0 - V_s2_4
+ 
+A * x0 - b
+ 
+ans =
+ 
+ I_s1_in_1 - I_s1_out_1 - L_k1_1
+ I_s1_in_2 - I_s1_out_2 - L_k1_2
+ I_s1_in_3 - I_s1_out_3 - L_k1_3
+ I_s1_in_4 - I_s1_out_4 - L_k1_4
+ I_s2_in_1 - I_s2_out_1 - L_k2_1
+ I_s2_in_2 - I_s2_out_2 - L_k2_2
+ I_s2_in_3 - I_s2_out_3 - L_k2_3
+ I_s2_in_4 - I_s2_out_4 - L_k2_4
+ I_s1_out_1 - I_s1_in_1 - L_k1_1
+ I_s1_out_2 - I_s1_in_2 - L_k1_2
+ I_s1_out_3 - I_s1_in_3 - L_k1_3
+ I_s1_out_4 - I_s1_in_4 - L_k1_4
+ I_s2_out_1 - I_s2_in_1 - L_k2_1
+ I_s2_out_2 - I_s2_in_2 - L_k2_2
+ I_s2_out_3 - I_s2_in_3 - L_k2_3
+ I_s2_out_4 - I_s2_in_4 - L_k2_4
+ 
+f * x0
+ 
+ans =
+ 
+L_k1_1*R_s1 + L_k1_2*R_s1 + L_k1_3*R_s1 + L_k1_4*R_s1 + L_k2_1*R_s2 + L_k2_2*R_s2 + L_k2_3*R_s2 + L_k2_4*R_s2
